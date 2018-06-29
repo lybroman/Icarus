@@ -1,0 +1,126 @@
+version: "3.3"
+
+services:
+    postgres:
+        image: postgres:latest
+        env_file:
+            - ./env/local-development
+        ports:
+            - 5432:5432
+        networks:
+            icarus_nirvana:
+
+    rabbitmq:
+        image: rabbitmq:3-management
+        depends_on:
+            - postgres
+        env_file:
+            - ./env/local-development
+        ports:
+            - 15672:15672
+            - 5672:5672
+        networks:
+            icarus_nirvana:
+
+    gateway:
+        ports:
+            - 8080:8080
+        image: functions/gateway:0.7.0
+        networks:
+            icarus_nirvana:
+        environment:
+            functions_provider_url: "http://faas-swarm:8080/"
+            read_timeout:  "30s"   # set both here, and on your functions
+            write_timeout: "30s"   # set both here, and on your functions
+            dnsrr: "true"  # Temporarily use dnsrr in place of VIP while issue persists on PWD
+        deploy:
+            resources:
+                limits:
+                    memory: 100M
+                reservations:
+                    memory: 50M
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 20
+                window: 380s
+            placement:
+                constraints:
+                    - 'node.platform.os == linux'
+
+    # Docker Swarm provider
+    faas-swarm:
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        ports:
+            - 8081:8080
+        image:  functions/faas-swarm:0.1.5
+        networks:
+            icarus_nirvana:
+        environment:
+            read_timeout:  "30s"   # set both here, and on your functions
+            write_timeout: "30s"   # set both here, and on your functions
+            DOCKER_API_VERSION: "1.30"
+        deploy:
+            placement:
+                constraints:
+                    - 'node.role == manager'
+                    - 'node.platform.os == linux'
+            resources:
+                limits:
+                    memory: 100M
+                reservations:
+                    memory: 50M
+            restart_policy:
+                condition: on-failure
+                delay: 5s
+                max_attempts: 20
+                window: 380s
+
+    faas-proxy:
+        build: faas-proxy
+        image: icarus/faas-proxy:latest-development
+        depends_on:
+          - rabbitmq
+          - postgres
+        networks:
+          icarus_nirvana:
+
+    foo-api:
+        build: func/foo-api
+        image: icarus/foo-api:latest-developmemnt
+        labels:
+            function: "true"
+        depends_on:
+            - gateway
+        networks:
+            icarus_nirvana:
+        environment:
+            fprocess: python index.py
+        deploy:
+            replicas: 1
+            placement:
+                constraints:
+                    - 'node.role == manager'
+                    - 'node.platform.os == linux'
+
+    bar-api:
+        build: func/bar-api
+        image: icarus/bar-api:latest-developmemnt
+        labels:
+            function: "true"
+        depends_on:
+            - gateway
+        networks:
+            icarus_nirvana:
+        environment:
+            fprocess: python index.py
+        deploy:
+            placement:
+                constraints:
+                    - 'node.role == manager'
+                    - 'node.platform.os == linux'
+
+networks:
+    icarus_nirvana:
+      driver: overlay
