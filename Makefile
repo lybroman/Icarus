@@ -6,6 +6,3 @@ build-local:
 
 destroy-local:
 	docker stack rm icarus
-
-run-demo:
-	python demos.py

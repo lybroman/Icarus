@@ -7,24 +7,23 @@ class Splitter(object):
     def __init__(self, splitter_func, integrator=None):
         self.splitter_func = splitter_func
         self.integrator = integrator
-        self.segments = {}
+        self.dispatched_items = {}
         self.async_results = []
 
     def __call__(self, *args, **kwargs):
         return Splitter(self.splitter_func, self.integrator)
 
     def dispatch(self, *args, **kwargs):
-        segments = self.splitter_func(*args, **kwargs)
-        self.segments = {}
+        sc = self.splitter_func(*args, **kwargs)
         self.async_results = []
-        for segment in segments:
-            self.segments[segment[0]] = segment[1:]
-            self.async_results.append(segment[0].delay(*(segment[1:])))
+        for item in sc:
+            self.dispatched_items[item.url] = item
+            self.async_results.append(item.handler.delay(item.url, item.content, **item.params))
         return self.async_results
 
     @property
     def ready(self):
-        if len(self.segments) == 0:
+        if not self.dispatched_items:
             raise RuntimeError('Please call run method before check status')
 
         for ar in self.async_results:
@@ -37,9 +36,9 @@ class Splitter(object):
         status = {}
         for i in range(len(self.async_results)):
             if self.async_results[i].ready():
-                status[self.segments.keys()[i]] = self.async_results[i].result
+                status[self.dispatched_items.keys()[i]] = self.async_results[i].result
             else:
-                status[self.segments.keys()[i]] = None
+                status[self.dispatched_items.keys()[i]] = None
         return status
 
     def integrate(self, *args, **kwargs):

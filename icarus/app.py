@@ -51,6 +51,6 @@ class Icarus(Celery):
     def default_handler(self):
         @self.handler
         # only a function signature
-        def func_handler(url, *args):
+        def func_handler(url, content, **kwargs):
             pass
         return func_handler
