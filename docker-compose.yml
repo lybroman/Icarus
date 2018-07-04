@@ -25,13 +25,16 @@ services:
     gateway:
         ports:
             - 8080:8080
-        image: functions/gateway:0.7.0
+        image: openfaas/gateway:0.8.3
         networks:
             icarus_nirvana:
         environment:
             functions_provider_url: "http://faas-swarm:8080/"
-            read_timeout:  "30s"   # set both here, and on your functions
-            write_timeout: "30s"   # set both here, and on your functions
+            direct_functions: "true"
+            read_timeout:  "300s"
+            write_timeout: "300s"
+            exec_timeout: "300s"
+            upstream_timeout: "300s"
             dnsrr: "true"  # Temporarily use dnsrr in place of VIP while issue persists on PWD
         deploy:
             resources:
@@ -54,12 +57,13 @@ services:
             - "/var/run/docker.sock:/var/run/docker.sock"
         ports:
             - 8081:8080
-        image:  functions/faas-swarm:0.1.5
+        image:  openfaas/faas-swarm:0.3.5
         networks:
             icarus_nirvana:
         environment:
-            read_timeout:  "30s"   # set both here, and on your functions
-            write_timeout: "30s"   # set both here, and on your functions
+            read_timeout:  "300s"
+            write_timeout: "300s"
+            exec_timeout: "300s"
             DOCKER_API_VERSION: "1.30"
         deploy:
             placement:
@@ -97,6 +101,9 @@ services:
             icarus_nirvana:
         environment:
             fprocess: python index.py
+            read_timeout:  "300s"
+            write_timeout: "300s"
+            exec_timeout: "300s"
         deploy:
             replicas: 1
             placement:
@@ -115,6 +122,9 @@ services:
             icarus_nirvana:
         environment:
             fprocess: python index.py
+            read_timeout:  "300s"
+            write_timeout: "300s"
+            exec_timeout: "300s"
         deploy:
             placement:
                 constraints:

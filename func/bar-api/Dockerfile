@@ -12,7 +12,7 @@ RUN apk update && apk add --no-cache --update \
   && rm /var/cache/apk/*
 
 RUN echo "Pulling watchdog binary from Github." \
-    && curl -vsSL https://github.com/openfaas/faas/releases/download/0.6.5/fwatchdog > /usr/bin/fwatchdog \
+    && curl -vsSL https://github.com/openfaas/faas/releases/download/0.8.0/fwatchdog > /usr/bin/fwatchdog \
     && chmod +x /usr/bin/fwatchdog
 
 WORKDIR /root/

@@ -1,21 +1,21 @@
 from celery import Celery
 from functools import wraps
-from splitter import Splitter
-from integrator import Integrator
+from producer import Producer
+from collector import Collector
 
 
 class Icarus(Celery):
     def __init__(self, name, backend, broker):
         super(Icarus, self).__init__(name, backend=backend, broker=broker)
-        self._splitters = []
+        self._producers = []
 
-    def splitter(self, *args, **kwargs):
+    def producer(self, *args, **kwargs):
 
         if not callable(args[0]):
-            raise TypeError("Splitter must be a callable object")
-        splitter_instance = Splitter(args[0])
-        self._splitters.append(splitter_instance)
-        return splitter_instance
+            raise TypeError("Producer must be a callable object")
+        producer_instance = Producer(args[0])
+        self._producers.append(producer_instance)
+        return producer_instance
 
     def handler(self, *args, **opt):
 
@@ -30,20 +30,20 @@ class Icarus(Celery):
             return __wrapper
         return _wrapper(args[0])
 
-    def integrator(self, *args, **opt):
+    def collector(self, *args, **opt):
 
-        if args[0] not in self._splitters:
-            raise TypeError("Splitter %s is not registered".format(args[0]))
+        if args[0] not in self._producers:
+            raise TypeError("Producer %s is not registered".format(args[0]))
 
         if not callable(args[0]):
-            raise TypeError("Splitter must be a callable object")
+            raise TypeError("Producer must be a callable object")
 
-        def _wrapper(integrator_func):
-            if not callable(integrator_func):
+        def _wrapper(collector_func):
+            if not callable(collector_func):
                 raise TypeError("Integrator must be a callable object")
 
-            args[0].integrator = Integrator(integrator_func)
-            return args[0].integrator
+            args[0].collector = Collector(collector_func)
+            return args[0].collector
 
         return _wrapper
 
