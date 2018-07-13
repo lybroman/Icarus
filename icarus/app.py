@@ -13,9 +13,9 @@ class Icarus(Celery):
 
         if not callable(args[0]):
             raise TypeError("Producer must be a callable object")
-        producer_instance = Producer(args[0])
-        self._producers.append(producer_instance)
-        return producer_instance
+        producer_pioneer_instance = Producer(args[0])
+        self._producers.append(producer_pioneer_instance)
+        return producer_pioneer_instance
 
     def handler(self, *args, **opt):
 

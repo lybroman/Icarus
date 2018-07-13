@@ -12,6 +12,7 @@ class Producer(object):
         self.async_results = []
 
     def __call__(self, *args, **kwargs):
+        # return
         return self.__class__(self.producer_func, self.collector)
 
     def dispatch(self, *args, **kwargs):
